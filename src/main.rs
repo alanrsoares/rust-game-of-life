@@ -1,9 +1,15 @@
 mod grid;
 
 fn main() {
-    let random_grid = grid::Grid::random(9, 9);
+    const GENERATIONS: usize = 60;
+    const DELAY: u64 = 160;
 
-    let neighbors = random_grid.cell_neighbors(3, 3);
+    let mut new_grid = grid::Grid::random(24, 24);
 
-    println!("{:?}", neighbors);
+    for _ in 0..GENERATIONS {
+        new_grid.next_state().render();
+
+        // delay printing to console
+        std::thread::sleep(std::time::Duration::from_millis(DELAY));
+    }
 }

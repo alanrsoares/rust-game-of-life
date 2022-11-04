@@ -1,5 +1,8 @@
 use std::collections::HashMap;
 
+const DEAD_CELL: char = '⬛';
+const LIVE_CELL: char = '⬜';
+
 #[derive(Debug)]
 pub enum GridError {
     CellOutOfBoundsError,
@@ -8,13 +11,13 @@ pub enum GridError {
 
 #[derive(Debug, Clone)]
 pub struct Grid {
-    width: u32,
-    height: u32,
-    cells: HashMap<(u32, u32), Cell>,
+    width: i32,
+    height: i32,
+    cells: HashMap<(i32, i32), Cell>,
 }
 
 impl Grid {
-    fn new(width: u32, height: u32) -> Grid {
+    fn new(width: i32, height: i32) -> Grid {
         let mut cells = HashMap::new();
         for y in 0..height {
             for x in 0..width {
@@ -28,7 +31,7 @@ impl Grid {
         }
     }
 
-    pub fn random(width: u32, height: u32) -> Grid {
+    pub fn random(width: i32, height: i32) -> Grid {
         let mut cells = HashMap::new();
         for y in 0..height {
             for x in 0..width {
@@ -42,11 +45,11 @@ impl Grid {
         }
     }
 
-    pub fn cell(&self, x: u32, y: u32) -> Option<&Cell> {
+    pub fn cell(&self, x: i32, y: i32) -> Option<&Cell> {
         self.cells.get(&(x, y))
     }
 
-    pub fn cell_neighbors(&self, x: u32, y: u32) -> Option<Vec<Cell>> {
+    pub fn cell_neighbors(&self, x: i32, y: i32) -> Option<Vec<Cell>> {
         let opt_cell = self.cell(x, y);
 
         if opt_cell.is_none() {
@@ -58,7 +61,7 @@ impl Grid {
         Some(cell.neighbours(self))
     }
 
-    pub fn toggle_cell(&mut self, x: u32, y: u32) -> &Grid {
+    pub fn toggle_cell(&mut self, x: i32, y: i32) -> &Grid {
         let opt_cell = self.cell(x, y);
 
         if opt_cell.is_none() {
@@ -73,40 +76,44 @@ impl Grid {
     }
 
     pub fn next_state(&mut self) -> &Grid {
-        let this1 = self.clone();
+        let mut this = self.clone();
 
-        let live_cells = this1
-            .cells
-            .iter()
-            .filter(|(_, cell)| cell.is_alive)
-            .map(|(_, cell)| cell.clone())
-            .collect::<Vec<Cell>>();
+        self.cells.iter().for_each(|(key, cell)| {
+            let live_neighbors = cell.live_neighbours_count(&this);
 
-        let mut insert = |(x, y), cell: &Cell| {
-            self.cells.insert((x, y), cell.next_state(live_cells.len()));
-        };
-
-        let _ = this1.cells.keys().into_iter().map(|key| {
-            let cell = this1.cells.get(key).unwrap();
-            let neighbours = cell.neighbours(&this1);
-            let live_neighbr_count = neighbours.into_iter().filter(|c| c.is_alive).count();
-            let new_cell = cell.next_state(live_neighbr_count);
-            insert(*key, &new_cell);
+            this.cells.insert(*key, cell.next_state(live_neighbors));
         });
 
+        self.cells = this.cells;
+
         self
+    }
+
+    pub fn render(&self) {
+        let mut output = String::new();
+
+        for y in 0..self.height {
+            for x in 0..self.width {
+                let cell = self.cell(x, y).unwrap();
+                output.push(if cell.is_alive { LIVE_CELL } else { DEAD_CELL });
+            }
+            output.push('\n');
+        }
+
+        // render output to terminal and clear screen
+        println!("{}{}", termion::clear::All, output);
     }
 }
 
 #[derive(Debug, Clone, Copy)]
 pub struct Cell {
-    x: u32,
-    y: u32,
+    x: i32,
+    y: i32,
     is_alive: bool,
 }
 
 impl Cell {
-    fn new(x: u32, y: u32, is_alive: bool) -> Cell {
+    fn new(x: i32, y: i32, is_alive: bool) -> Cell {
         Cell {
             x: x,
             y: y,
@@ -115,20 +122,22 @@ impl Cell {
     }
 
     fn neighbours(&self, grid: &Grid) -> Vec<Cell> {
-        let mut neighbours = Vec::new();
+        let coordinates = [
+            (self.x - 1, self.y - 1),
+            (self.x, self.y - 1),
+            (self.x + 1, self.y - 1),
+            (self.x - 1, self.y),
+            (self.x + 1, self.y),
+            (self.x - 1, self.y + 1),
+            (self.x, self.y + 1),
+            (self.x + 1, self.y + 1),
+        ];
 
-        for y in self.y - 1..self.y + 1 {
-            for x in self.x - 1..self.x + 1 {
-                if x == self.x && y == self.y {
-                    continue;
-                }
-                if let Some(cell) = grid.cells.get(&(x, y)) {
-                    neighbours.push(*cell);
-                }
-            }
-        }
-
-        neighbours
+        coordinates
+            .iter()
+            .filter_map(|(x, y)| grid.cell(*x, *y))
+            .map(|cell| *cell)
+            .collect::<Vec<Cell>>()
     }
 
     pub fn live_neighbours_count(&self, grid: &Grid) -> usize {
@@ -162,14 +171,6 @@ impl Cell {
     /// let cell = grid.cell(1, 1).unwrap();
     ///
     /// assert_eq!(cell.next_state(0).is_alive, false);
-    /// assert_eq!(cell.next_state(1).is_alive, false);
-    /// assert_eq!(cell.next_state(2).is_alive, true);
-    /// assert_eq!(cell.next_state(3).is_alive, true);
-    /// assert_eq!(cell.next_state(4).is_alive, false);
-    /// assert_eq!(cell.next_state(5).is_alive, false);
-    /// assert_eq!(cell.next_state(6).is_alive, false);
-    /// assert_eq!(cell.next_state(7).is_alive, false);
-    /// assert_eq!(cell.next_state(8).is_alive, false);
     ///
     /// ```
     pub fn next_state(&self, live_neighbour_count: usize) -> Cell {
@@ -186,5 +187,19 @@ impl Cell {
                 new_cell
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn it_should_create_a_random_grid() {
+        let columns = 10;
+        let rows = 10;
+        let grid = Grid::random(columns, rows);
+
+        assert_eq!(grid.cells.keys().count(), (columns * rows) as usize);
     }
 }
