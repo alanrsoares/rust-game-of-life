@@ -174,19 +174,17 @@ impl Cell {
     ///
     /// ```
     pub fn next_state(&self, live_neighbour_count: usize) -> Cell {
-        let mut new_cell = self.clone();
+        let mut cell = self.clone();
 
-        match live_neighbour_count {
-            2 => new_cell,
-            3 => {
-                new_cell.is_alive = true;
-                new_cell
-            }
-            _ => {
-                new_cell.is_alive = false;
-                new_cell
-            }
+        match (self.is_alive, live_neighbour_count) {
+            (true, 0 | 1) => cell.is_alive = false,
+            (true, 2 | 3) => cell.is_alive = true,
+            (true, _) => cell.is_alive = false,
+            (false, 3) => cell.is_alive = true,
+            (false, _) => cell.is_alive = false,
         }
+
+        cell
     }
 }
 
