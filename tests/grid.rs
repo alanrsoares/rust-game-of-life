@@ -1,4 +1,4 @@
-use game_of_life::Grid;
+use life::Grid;
 
 #[test]
 fn it_should_create_a_random_grid() {

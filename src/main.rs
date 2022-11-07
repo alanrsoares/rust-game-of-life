@@ -1,5 +1,5 @@
-use game_of_life::Game;
-use game_of_life::Grid;
+use life::Game;
+use life::Grid;
 
 const GRID_SIZE: i32 = 20;
 const MAX_GENERATIONS: usize = 100;
