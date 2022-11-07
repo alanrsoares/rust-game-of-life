@@ -13,7 +13,7 @@ pub enum GridError {
 pub struct Grid {
     width: i32,
     height: i32,
-    cells: HashMap<(i32, i32), Cell>,
+    pub cells: HashMap<(i32, i32), Cell>,
 }
 
 impl Grid {
@@ -162,16 +162,6 @@ impl Cell {
     /// 3. Any live cell with more than three live neighbours dies, as if by overpopulation.
     /// 4. Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction.
     ///
-    /// Example:
-    /// ```
-    /// use game_of_life::grid::Grid;
-    ///
-    /// let mut grid = Grid::new(3, 3);
-    ///
-    /// let cell = grid.cell(1, 1).unwrap();
-    ///
-    /// assert_eq!(cell.next_state(0).is_alive, false);
-    ///
     /// ```
     pub fn next_state(&self, live_neighbour_count: usize) -> Cell {
         let mut cell = self.clone();
@@ -185,19 +175,5 @@ impl Cell {
         }
 
         cell
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_should_create_a_random_grid() {
-        let columns = 10;
-        let rows = 10;
-        let grid = Grid::random(columns, rows);
-
-        assert_eq!(grid.cells.keys().count(), (columns * rows) as usize);
     }
 }
