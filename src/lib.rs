@@ -17,7 +17,7 @@ pub struct Grid {
 }
 
 impl Grid {
-    fn new(width: i32, height: i32) -> Grid {
+    pub fn new(width: i32, height: i32) -> Grid {
         let mut cells = HashMap::new();
         for y in 0..height {
             for x in 0..width {
@@ -29,6 +29,14 @@ impl Grid {
             height,
             cells,
         }
+    }
+
+    pub fn from_seed(width: i32, height: i32, live_cells: &[(i32, i32)]) -> Grid {
+        let mut grid = Grid::new(width, height);
+        for (x, y) in live_cells {
+            grid.cells.get_mut(&(*x, *y)).unwrap().toggle();
+        }
+        grid
     }
 
     pub fn random(width: i32, height: i32) -> Grid {
@@ -102,6 +110,40 @@ impl Grid {
 
         // render output to terminal and clear screen
         println!("{}{}", termion::clear::All, output);
+    }
+}
+
+pub struct Game {
+    pub grid: Grid,
+    pub max_generations: usize,
+    pub frame_delay: u64,
+}
+
+impl Game {
+    pub fn new(grid: Grid, max_generations: usize, frame_delay: u64) -> Game {
+        Game {
+            grid,
+            max_generations,
+            frame_delay,
+        }
+    }
+
+    pub fn run(&mut self) {
+        let mut current_generation = 0;
+
+        'game_loop: loop {
+            self.grid.next_state().render();
+
+            println!("Generation: {}", current_generation);
+            println!("\nhit ctrl-c to exit\n");
+
+            if current_generation == self.max_generations {
+                break 'game_loop;
+            }
+            current_generation += 1;
+            // delay printing to console
+            std::thread::sleep(std::time::Duration::from_millis(self.frame_delay));
+        }
     }
 }
 
