@@ -134,7 +134,10 @@ impl Game {
         'game_loop: loop {
             self.grid.next_state().render();
 
-            println!("Generation: {}", current_generation);
+            println!(
+                "Generation: {}/{}",
+                current_generation, self.max_generations
+            );
             println!("\nhit ctrl-c to exit\n");
 
             if current_generation == self.max_generations {
