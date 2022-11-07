@@ -109,7 +109,10 @@ impl Grid {
         }
 
         // render output to terminal and clear screen
-        println!("{}{}", termion::clear::All, output);
+
+        // termion move cursor to top left
+        print!("{}", termion::cursor::Goto(1, 1));
+        print!("{}{}", termion::clear::All, output);
     }
 }
 
