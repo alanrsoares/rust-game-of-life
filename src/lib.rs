@@ -11,8 +11,8 @@ pub enum GridError {
 
 #[derive(Debug, Clone)]
 pub struct Grid {
-    width: i32,
-    height: i32,
+    pub width: i32,
+    pub height: i32,
     pub cells: HashMap<(i32, i32), Cell>,
 }
 
